@@ -1,0 +1,73 @@
+# Lambda function
+resource "aws_lambda_function" "transaction_processor" {
+  filename         = "transaction_processor.zip"
+  source_code_hash = filebase64sha256("transaction_processor.zip")
+
+  function_name = var.lambda_function_name
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "main.lambda_handler"
+  runtime       = "python3.11"
+  timeout       = 30
+  memory_size   = 256
+
+  environment {
+    variables = {
+      S3_BUCKET    = var.s3_bucket_name
+      PROJECT_NAME = var.project_name
+      ENVIRONMENT  = var.environment
+      LOG_LEVEL    = "INFO"
+    }
+  }
+}
+
+# API Gateway invoke permission
+resource "aws_lambda_permission" "api_gateway_invoke" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.transaction_processor.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*/POST/*"
+}
+
+# Data sources for permission
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
+# CloudWatch log group
+resource "aws_cloudwatch_log_group" "lambda_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.transaction_processor.function_name}"
+  retention_in_days = 7
+  kms_key_id        = aws_kms_key.lambda_log_key.arn
+}
+
+resource "aws_kms_key" "lambda_log_key" {
+  description = "KMS key for Lambda logs encryption"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.${data.aws_region.current.name}.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

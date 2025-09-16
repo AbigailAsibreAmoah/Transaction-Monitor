@@ -1,0 +1,21 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# AWS
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.env
+.venv
+venv/
+*.zip

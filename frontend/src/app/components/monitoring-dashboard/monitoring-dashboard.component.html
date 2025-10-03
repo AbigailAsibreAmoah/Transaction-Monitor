@@ -1,0 +1,80 @@
+<div>
+  <h3>Real-Time Monitoring</h3>
+  
+  <!-- Metrics Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <h4>Total Transactions</h4>
+      <div class="metric-value">{{ metrics.totalTransactions }}</div>
+    </div>
+    <div class="metric-card">
+      <h4>Total Volume</h4>
+      <div class="metric-value">${{ metrics.totalVolume.toFixed(2) }}</div>
+    </div>
+    <div class="metric-card">
+      <h4>Avg Risk Score</h4>
+      <div class="metric-value">{{ metrics.avgRiskScore.toFixed(1) }}</div>
+    </div>
+    <div class="metric-card alert">
+      <h4>High Risk Alerts</h4>
+      <div class="metric-value">{{ metrics.highRiskCount }}</div>
+    </div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h4>Transaction Amounts</h4>
+      <div class="chart-wrapper">
+        <canvas baseChart
+          [data]="volumeChartData"
+          [type]="volumeChartType"
+          [options]="chartOptions">
+        </canvas>
+      </div>
+    </div>
+    
+    <div class="chart-card">
+      <h4>Risk Scores</h4>
+      <div class="chart-wrapper">
+        <canvas baseChart
+          [data]="riskScoreChartData"
+          [type]="riskScoreChartType"
+          [options]="chartOptions">
+        </canvas>
+      </div>
+    </div>
+    
+    <div class="chart-card">
+      <h4>Risk Distribution</h4>
+      <div class="chart-wrapper">
+        <canvas baseChart
+          [data]="riskDistributionChartData"
+          [type]="riskDistributionChartType"
+          [options]="{responsive: true, maintainAspectRatio: false}">
+        </canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="activity-feed">
+    <h4>Recent Transactions</h4>
+    <div class="activity-list">
+      <div *ngFor="let transaction of transactions.slice(-5).reverse()" class="activity-item">
+        <span class="activity-time">
+          {{ transaction.timestamp ? (transaction.timestamp | date:'short') : 'N/A' }}
+        </span>
+        <span class="activity-desc">
+          {{ transaction.merchant }} - {{ formatCurrency(transaction.amount || 0, transaction.currency) }}
+        </span>
+        <span class="activity-status" [ngClass]="{'high': (transaction.risk_score || 0) > 70, 'normal': (transaction.risk_score || 0) <= 70}">
+          Risk: {{ transaction.risk_score || 0 }}
+        </span>
+      </div>
+      <div *ngIf="transactions.length === 0" class="activity-item">
+        <span class="activity-desc">No transactions yet</span>
+      </div>
+    </div>
+  </div>
+</div>

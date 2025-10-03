@@ -1,6 +1,0 @@
-{
-  "region": "us-east-1",
-  "cognito_user_pool_id": "us-east-1_A0uNY4Q07",
-  "cognito_user_pool_client_id": "6h56ikffem49ph32j830bvj7h",
-  "api_base_url": "https://lpf1gn8aia.execute-api.us-east-1.amazonaws.com/dev"
-}

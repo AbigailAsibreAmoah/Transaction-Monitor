@@ -1,0 +1,93 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h2>Transaction Monitor</h2>
+    <button class="signout-btn" (click)="onLogout()">
+      Sign Out
+    </button>
+  </div>
+  
+  <app-tab-navigation 
+    [activeTab]="activeTab" 
+    (tabChange)="onTabChange($event)">
+  </app-tab-navigation>
+  
+  <div class="tab-content">
+    <!-- Dashboard Tab -->
+    <div *ngIf="activeTab === 'dashboard'">
+      <app-monitoring-dashboard [transactions]="transactions"></app-monitoring-dashboard>
+    </div>
+
+    <!-- Submit Transaction Tab -->
+    <div *ngIf="activeTab === 'transactions'">
+      <form (ngSubmit)="handleSubmit()" class="transaction-form">
+        <div class="form-group">
+          <label>Amount:</label>
+          <input
+            type="number"
+            step="0.01"
+            [(ngModel)]="transaction.amount"
+            name="amount"
+            required
+          />
+        </div>
+        
+        <div class="form-group">
+          <label>Merchant:</label>
+          <input
+            type="text"
+            [(ngModel)]="transaction.merchant"
+            name="merchant"
+            required
+          />
+        </div>
+        
+        <div class="form-group">
+          <label>Currency:</label>
+          <select
+            [(ngModel)]="transaction.currency"
+            name="currency"
+          >
+            <option value="CAD">CAD - Canadian Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="GHS">GHS - Ghana Cedi</option>
+            <option value="INR">INR - Indian Rupee</option>
+            <option value="JPY">JPY - Japanese Yen</option>
+            <option value="KES">KES - Kenyan Shilling</option>
+            <option value="NGN">NGN - Nigerian Naira</option>
+            <option value="USD">USD - US Dollar</option>
+            <option value="ZAR">ZAR - South African Rand</option>
+          </select>
+        </div>
+        
+        <button type="submit" [disabled]="loading">
+          {{ loading ? 'Processing...' : 'Submit Transaction' }}
+        </button>
+      </form>
+      
+      <div class="result" [ngClass]="{'error': result?.error, 'success': !result?.error}" *ngIf="result">
+        <div *ngIf="result.error">
+          <p>Error: {{ result.error }}</p>
+        </div>
+        <div *ngIf="!result.error">
+          <p>Transaction ID: {{ result.transaction_id }}</p>
+          <p>Risk Score: {{ result.risk_score }}</p>
+          <p>Status: {{ result.status }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div *ngIf="activeTab === 'analytics'">
+      <app-analytics [transactions]="transactions"></app-analytics>
+    </div>
+
+    <!-- Transaction History Tab -->
+    <div *ngIf="activeTab === 'history'">
+      <app-transaction-history 
+        [transactions]="transactions" 
+        (delete)="deleteTransaction($event)">
+      </app-transaction-history>
+    </div>
+  </div>
+</div>

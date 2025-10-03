@@ -25,7 +25,7 @@ module "api_gateway" {
   environment          = local.environment
   lambda_invoke_arn    = module.lambda.lambda_invoke_arn
   lambda_function_name = module.lambda.lambda_function_name
-  cors_allowed_origin  = "http://localhost:3000"
+  cors_allowed_origin  = "https://d1n1njxujlyqzf.cloudfront.net"
 }
 
 # ==============================
@@ -38,5 +38,6 @@ module "lambda" {
   lambda_function_name = "${local.project_name}-${local.environment}-function"
   s3_bucket_name       = module.storage.s3_bucket_name
   s3_bucket_arn        = module.storage.s3_bucket_arn
-
+  dynamodb_table_name  = module.storage.transactions_table_name
+  dynamodb_table_arn   = module.storage.transactions_table_arn
 }

@@ -140,6 +140,30 @@ resource "aws_api_gateway_integration" "signup_integration" {
   uri                     = var.lambda_invoke_arn
 }
 
+resource "aws_api_gateway_method_response" "signup_post_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.signup_resource.id
+  http_method = aws_api_gateway_method.signup_post.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "signup_post_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.signup_resource.id
+  http_method = aws_api_gateway_method.signup_post.http_method
+  status_code = aws_api_gateway_method_response.signup_post_response_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_allowed_origin}'"
+  }
+
+  depends_on = [aws_api_gateway_integration.signup_integration]
+}
+
 resource "aws_api_gateway_integration" "signup_options_integration" {
   rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
   resource_id   = aws_api_gateway_resource.signup_resource.id
@@ -210,6 +234,30 @@ resource "aws_api_gateway_integration" "login_integration" {
   uri                     = var.lambda_invoke_arn
 }
 
+resource "aws_api_gateway_method_response" "login_post_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.login_resource.id
+  http_method = aws_api_gateway_method.login_post.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "login_post_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.login_resource.id
+  http_method = aws_api_gateway_method.login_post.http_method
+  status_code = aws_api_gateway_method_response.login_post_response_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_allowed_origin}'"
+  }
+
+  depends_on = [aws_api_gateway_integration.login_integration]
+}
+
 resource "aws_api_gateway_integration" "login_options_integration" {
   rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
   resource_id   = aws_api_gateway_resource.login_resource.id
@@ -270,12 +318,18 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.transaction_options_integration,
     aws_api_gateway_integration_response.transaction_post_integration_response,
     aws_api_gateway_integration_response.transaction_options_integration_response,
+    aws_api_gateway_integration.transactions_integration,
+    aws_api_gateway_integration.transactions_options_integration,
+    aws_api_gateway_integration_response.transactions_get_integration_response,
+    aws_api_gateway_integration_response.transactions_options_integration_response,
     aws_api_gateway_integration.signup_integration,
     aws_api_gateway_integration.signup_options_integration,
     aws_api_gateway_integration_response.signup_options_integration_response,
+    aws_api_gateway_integration_response.signup_post_integration_response,
     aws_api_gateway_integration.login_integration,
     aws_api_gateway_integration.login_options_integration,
-    aws_api_gateway_integration_response.login_options_integration_response
+    aws_api_gateway_integration_response.login_options_integration_response,
+    aws_api_gateway_integration_response.login_post_integration_response
   ]
 
   lifecycle {
@@ -289,12 +343,16 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.transaction_options.id,
       aws_api_gateway_integration.transaction_integration.id,
       aws_api_gateway_integration.transaction_options_integration.id,
+      aws_api_gateway_integration_response.transaction_options_integration_response.id,
       aws_api_gateway_resource.signup_resource.id,
       aws_api_gateway_method.signup_post.id,
       aws_api_gateway_integration.signup_integration.id,
+      aws_api_gateway_integration_response.signup_options_integration_response.id,
       aws_api_gateway_resource.login_resource.id,
       aws_api_gateway_method.login_post.id,
-      aws_api_gateway_integration.login_integration.id
+      aws_api_gateway_integration.login_integration.id,
+      aws_api_gateway_integration_response.login_options_integration_response.id,
+      var.cors_allowed_origin
     ]))
   }
 }

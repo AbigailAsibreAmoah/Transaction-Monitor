@@ -1,21 +1,29 @@
+# Create zip file from Python code
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda_code.py"
+  output_path = "${path.module}/transaction_processor.zip"
+}
+
 # Lambda function
 resource "aws_lambda_function" "transaction_processor" {
-  filename         = "transaction_processor.zip"
-  source_code_hash = filebase64sha256("transaction_processor.zip")
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   function_name = var.lambda_function_name
   role          = aws_iam_role.lambda_role.arn
-  handler       = "main.lambda_handler"
+  handler       = "lambda_code.lambda_handler"
   runtime       = "python3.11"
   timeout       = 30
   memory_size   = 256
 
   environment {
     variables = {
-      S3_BUCKET    = var.s3_bucket_name
-      PROJECT_NAME = var.project_name
-      ENVIRONMENT  = var.environment
-      LOG_LEVEL    = "INFO"
+      S3_BUCKET           = var.s3_bucket_name
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.transactions.name
+      PROJECT_NAME        = var.project_name
+      ENVIRONMENT         = var.environment
+      LOG_LEVEL           = "INFO"
     }
   }
 }
@@ -26,7 +34,7 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.transaction_processor.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*/POST/*"
+  source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*/*"
 }
 
 # Data sources for permission

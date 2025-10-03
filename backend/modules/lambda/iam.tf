@@ -41,15 +41,37 @@ resource "aws_iam_role_policy" "lambda_permissions" {
       {
         Effect = "Allow"
         Action = [
-          "cognito-idp:AdminCreateUser",
-          "cognito-idp:AdminSetUserPassword",
-          "cognito-idp:AdminInitiateAuth",
-          "cognito-idp:AdminGetUser",
-          "cognito-idp:ListUserPools",
-          "cognito-idp:ListUserPoolClients",
-          "cognito-idp:DescribeUserPool"
+          "cognito-idp:SignUp",
+          "cognito-idp:InitiateAuth",
+          "cognito-idp:AdminConfirmSignUp"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.transactions.arn,
+          "${aws_dynamodb_table.transactions.arn}/index/*",
+          aws_dynamodb_table.csrf_tokens.arn,
+          "${aws_dynamodb_table.csrf_tokens.arn}/index/*"
+        ]
       }
     ]
   })

@@ -1,0 +1,9 @@
+<div class="app-container" *ngIf="!user">
+  <app-auth (login)="onLogin($event.userData, $event.authToken)"></app-auth>
+</div>
+
+<div class="app-container" *ngIf="user">
+  <h1 class="app-title">Transaction Monitoring System</h1>
+  <p class="app-subtitle">Welcome back, {{ user ? user.username : 'User' }}!</p>
+  <app-dashboard [token]="token" (logout)="onLogout()"></app-dashboard>
+</div>

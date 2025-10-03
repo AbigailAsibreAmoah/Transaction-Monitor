@@ -25,4 +25,12 @@ variable "s3_bucket_arn" {
   type        = string
 }
 
+variable "dynamodb_table_name" {
+  description = "Name of the DynamoDB transactions table"
+  type        = string
+}
 
+variable "dynamodb_table_arn" {
+  description = "ARN of the DynamoDB transactions table"
+  type        = string
+}

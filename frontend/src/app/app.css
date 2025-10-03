@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/*
+ * Global Styles & Layout
+ * Ultra Modern Glassmorphic CSS - Blue & Yellow Theme
+ */
+
+:root {
+  /* Blue Palette */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+
+  /* Yellow/Gold Palette */
+  --yellow-100: #fef3c7;
+  --yellow-200: #fde68a;
+  --yellow-300: #fcd34d;
+  --yellow-400: #fbbf24;
+  --yellow-500: #f59e0b;
+  --yellow-600: #d97706;
+  --yellow-700: #b45309;
+
+  /* Glass Colors */
+  --glass-blue: rgba(59, 130, 246, 0.08);
+  --glass-blue-border: rgba(59, 130, 246, 0.15);
+  --glass-yellow: rgba(251, 191, 36, 0.06);
+  --glass-yellow-border: rgba(251, 191, 36, 0.18);
+  --glass-white: rgba(255, 255, 255, 0.08);
+  --glass-white-border: rgba(255, 255, 255, 0.15);
+
+  /* Neutrals */
+  --white: #ffffff;
+  --black: #000000;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Glass Properties */
+  --glass-blur: 8px;
+  --glass-blur-strong: 12px;
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+  --glass-shadow-strong: 0 8px 32px rgba(31, 38, 135, 0.5);
+  
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+}
+
+/* App Container */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.app-title {
+  text-align: center;
+  color: #1d1d1f;
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin: 2rem 0 0.5rem;
+  letter-spacing: -0.02em;
+  line-height: 1.07143;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.app-title::after {
+  content: '';
+  width: 60px;
+  height: 40px;
+  background: url('data:image/svg+xml,<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="water" cx="50%" cy="90%" r="50%"><stop offset="0%" stop-color="%2393c5fd" stop-opacity="0.4"/><stop offset="100%" stop-color="%233b82f6" stop-opacity="0.2"/></radialGradient></defs><ellipse cx="30" cy="35" rx="25" ry="4" fill="url(%23water)"/><path d="M15 35C15 35 18 27 23 25C28 23 32 23 37 25C42 27 45 35 45 35" fill="none" stroke="%233b82f6" stroke-width="1.5" opacity="0.6"/><path d="M30 25C30 25 35 17 40 15C45 13 47 10 45 12C43 15 40 17 37 20C35 22 32 25 30 25Z" fill="%233b82f6" opacity="0.8"/><path d="M37 20C37 20 40 22 42 25C44 27 47 30 50 27C53 25 50 22 47 20C45 17 42 15 40 17C37 20 37 20 37 20Z" fill="%2360a5fa" opacity="0.7"/><circle cx="35" cy="17" r="1.5" fill="%231e40af"/><path d="M32 20C32 20 35 22 37 20" stroke="%231e40af" stroke-width="1" stroke-linecap="round"/></svg>') no-repeat center;
+  background-size: contain;
+  opacity: 0;
+  animation: dolphinLeap 3s ease-out forwards;
+}
+
+.app-subtitle {
+  text-align: center;
+  color: #86868b;
+  font-size: 1.375rem;
+  font-weight: 400;
+  margin-bottom: 3rem;
+  line-height: 1.36364;
+}

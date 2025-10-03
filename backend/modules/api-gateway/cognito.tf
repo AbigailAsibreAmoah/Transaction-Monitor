@@ -2,8 +2,12 @@
 resource "aws_cognito_user_pool" "user_pool" {
   name = "${var.project_name}-${var.environment}-userpool"
 
-  # No verification required
+  # Completely disable verification
   auto_verified_attributes = []
+  
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+  }
 
   password_policy {
     minimum_length    = 8
@@ -17,13 +21,17 @@ resource "aws_cognito_user_pool" "user_pool" {
     allow_admin_create_user_only = false
   }
 
-  # Disable all verification
+  # No account recovery
   account_recovery_setting {
     recovery_mechanism {
       name     = "admin_only"
       priority = 1
     }
   }
+
+  # Skip verification
+  email_verification_subject = "Verify your email"
+  email_verification_message = "Please verify your email with code {####}"
 }
 
 # Cognito User Pool Client
@@ -37,6 +45,17 @@ resource "aws_cognito_user_pool_client" "user_pool_client" {
     "ALLOW_REFRESH_TOKEN_AUTH",
     "ALLOW_USER_SRP_AUTH"
   ]
+
+  # Fix token validity ranges
+  access_token_validity = 60
+  id_token_validity = 60
+  refresh_token_validity = 30
+  
+  token_validity_units {
+    access_token = "minutes"
+    id_token = "minutes"
+    refresh_token = "days"
+  }
 }
 
 # Outputs

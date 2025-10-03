@@ -1,0 +1,207 @@
+<div class="analytics-container">
+  <h2>📊 Comprehensive Analytics</h2>
+  
+  <!-- Detailed Metrics Grid -->
+  <div class="detailed-metrics">
+    <h3>Key Performance Indicators</h3>
+    <div class="metrics-grid-large">
+      <div class="metric-card-large">
+        <h4>Total Transactions</h4>
+        <div class="metric-value-large">{{ detailedMetrics.totalTransactions }}</div>
+        <div class="metric-subtitle">All time</div>
+      </div>
+      <div class="metric-card-large">
+        <h4>Total Volume</h4>
+        <div class="metric-value-large">${{ detailedMetrics.totalVolume.toFixed(2) }}</div>
+        <div class="metric-subtitle">Combined value</div>
+      </div>
+      <div class="metric-card-large">
+        <h4>Average Risk Score</h4>
+        <div class="metric-value-large">{{ detailedMetrics.avgRiskScore.toFixed(1) }}</div>
+        <div class="metric-subtitle">Risk assessment</div>
+      </div>
+      <div class="metric-card-large alert">
+        <h4>Flagged Transactions</h4>
+        <div class="metric-value-large">{{ detailedMetrics.flaggedPercentage.toFixed(1) }}%</div>
+        <div class="metric-subtitle">{{ detailedMetrics.highRiskCount }} of {{ detailedMetrics.totalTransactions }}</div>
+      </div>
+      <div class="metric-card-large">
+        <h4>Average Amount</h4>
+        <div class="metric-value-large">${{ detailedMetrics.avgTransactionAmount.toFixed(2) }}</div>
+        <div class="metric-subtitle">Per transaction</div>
+      </div>
+      <div class="metric-card-large">
+        <h4>Largest Transaction</h4>
+        <div class="metric-value-large">${{ detailedMetrics.largestTransaction.toFixed(2) }}</div>
+        <div class="metric-subtitle">Maximum value</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Analysis Section -->
+  <div class="risk-analysis">
+    <h3>Risk Analysis Breakdown</h3>
+    <div class="risk-stats">
+      <div class="risk-stat low">
+        <span class="risk-count">{{ detailedMetrics.lowRiskCount }}</span>
+        <span class="risk-label">Low Risk (0-30)</span>
+      </div>
+      <div class="risk-stat medium">
+        <span class="risk-count">{{ detailedMetrics.mediumRiskCount }}</span>
+        <span class="risk-label">Medium Risk (31-70)</span>
+      </div>
+      <div class="risk-stat high">
+        <span class="risk-count">{{ detailedMetrics.highRiskCount }}</span>
+        <span class="risk-label">High Risk (71-100)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Large Charts Grid -->
+  <div class="charts-section">
+    <h3>Detailed Chart Analysis</h3>
+    
+    <div class="chart-row">
+      <div class="chart-large">
+        <h4>📈 Transaction Volume Trend</h4>
+        <div class="chart-wrapper-large">
+          <canvas baseChart
+            [data]="volumeChartData"
+            [type]="volumeChartType"
+            [options]="chartOptions">
+          </canvas>
+        </div>
+      </div>
+      
+      <div class="chart-large">
+        <h4>⚠️ Risk Score Distribution</h4>
+        <div class="chart-wrapper-large">
+          <canvas baseChart
+            [data]="riskScoreChartData"
+            [type]="riskScoreChartType"
+            [options]="chartOptions">
+          </canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-large">
+        <h4>🎯 Risk Level Breakdown</h4>
+        <div class="chart-wrapper-large">
+          <canvas baseChart
+            [data]="riskDistributionChartData"
+            [type]="riskDistributionChartType"
+            [options]="{responsive: true, maintainAspectRatio: false}">
+          </canvas>
+        </div>
+      </div>
+      
+      <div class="chart-large">
+        <h4>💱 Currency Distribution</h4>
+        <div class="chart-wrapper-large">
+          <canvas baseChart
+            [data]="currencyChartData"
+            [type]="currencyChartType"
+            [options]="{responsive: true, maintainAspectRatio: false}">
+          </canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-large">
+        <h4>🏪 Top Merchants by Volume</h4>
+        <div class="chart-wrapper-large">
+          <canvas baseChart
+            [data]="merchantChartData"
+            [type]="merchantChartType"
+            [options]="chartOptions">
+          </canvas>
+        </div>
+      </div>
+      
+      <div class="chart-large" *ngIf="transactions.length > 0 && transactions[0].timestamp">
+        <h4>⏰ Time Series Analysis</h4>
+        <div class="chart-wrapper-large">
+          <canvas baseChart
+            [data]="timeSeriesChartData"
+            [type]="timeSeriesChartType"
+            [options]="{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: { type: 'linear', display: true, position: 'left' },
+                y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+              }
+            }">
+          </canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Tables -->
+  <div class="data-tables">
+    <div class="table-section">
+      <h3>💰 Currency Breakdown</h3>
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Currency</th>
+              <th>Transactions</th>
+              <th>Total Volume</th>
+              <th>Avg Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let currency of getObjectKeys(detailedMetrics.currencyBreakdown)">
+              <td>{{ currency }}</td>
+              <td>{{ detailedMetrics.currencyBreakdown[currency].count }}</td>
+              <td>{{ formatCurrency(detailedMetrics.currencyBreakdown[currency].volume, currency) }}</td>
+              <td>{{ formatCurrency(detailedMetrics.currencyBreakdown[currency].volume / detailedMetrics.currencyBreakdown[currency].count, currency) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-section">
+      <h3>🏪 Merchant Analysis</h3>
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Merchant</th>
+              <th>Transactions</th>
+              <th>Total Volume</th>
+              <th>Avg Risk Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let merchant of getObjectKeys(detailedMetrics.merchantBreakdown)">
+              <td>{{ merchant }}</td>
+              <td>{{ detailedMetrics.merchantBreakdown[merchant].count }}</td>
+              <td>${{ detailedMetrics.merchantBreakdown[merchant].volume.toFixed(2) }}</td>
+              <td>
+                <span [ngClass]="{
+                  'risk-high': detailedMetrics.merchantBreakdown[merchant].avgRisk > 70,
+                  'risk-medium': detailedMetrics.merchantBreakdown[merchant].avgRisk >= 30 && detailedMetrics.merchantBreakdown[merchant].avgRisk <= 70,
+                  'risk-low': detailedMetrics.merchantBreakdown[merchant].avgRisk < 30
+                }">
+                  {{ detailedMetrics.merchantBreakdown[merchant].avgRisk.toFixed(1) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="transactions.length === 0">
+    <h3>📊 No Data Available</h3>
+    <p>Submit some transactions to see comprehensive analytics and insights.</p>
+  </div>
+</div>

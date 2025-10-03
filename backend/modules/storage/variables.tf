@@ -4,6 +4,6 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Environment name"
+  description = "Environment (dev, staging, prod)"
   type        = string
 }

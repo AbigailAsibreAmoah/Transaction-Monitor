@@ -314,3 +314,198 @@
     font-size: 2rem;
   }
 }
+
+/* Spending Insights */
+.insights-section {
+  margin-bottom: 3rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.insight-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.insight-card p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+/* Merchant Risk Profiles */
+.merchant-profiles {
+  margin-bottom: 3rem;
+}
+
+.profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.profile-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.profile-card.risk-low {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.profile-card.risk-medium {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.profile-card.risk-high {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.profile-card h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-stats .stat {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.risk-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-card.risk-low .risk-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #059669;
+}
+
+.profile-card.risk-medium .risk-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #d97706;
+}
+
+.profile-card.risk-high .risk-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+}
+
+/* Dark Theme Styles */
+body.dark-theme .analytics-container {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .analytics-container h2,
+body.dark-theme .analytics-container h3 {
+  color: #f1f5f9;
+}
+
+body.dark-theme .analytics-container h3 {
+  border-bottom-color: #60a5fa;
+}
+
+body.dark-theme .metric-card-large {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .metric-card-large h4 {
+  color: #94a3b8;
+}
+
+body.dark-theme .metric-value-large {
+  color: #f1f5f9;
+}
+
+body.dark-theme .metric-subtitle {
+  color: #94a3b8;
+}
+
+body.dark-theme .risk-label {
+  color: #cbd5e1;
+}
+
+body.dark-theme .chart-large,
+body.dark-theme .table-section {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .chart-large h4 {
+  color: #f1f5f9;
+}
+
+body.dark-theme .data-table th {
+  background: rgba(59, 130, 246, 0.2);
+  color: #f1f5f9;
+}
+
+body.dark-theme .data-table td {
+  color: #cbd5e1;
+}
+
+body.dark-theme .data-table tr:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+body.dark-theme .insight-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2));
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .insight-card p {
+  color: #e2e8f0;
+}
+
+body.dark-theme .profile-card {
+  background: rgba(30, 41, 59, 0.9);
+}
+
+body.dark-theme .profile-card h4 {
+  color: #f1f5f9;
+}
+
+body.dark-theme .profile-stats .stat {
+  color: #94a3b8;
+}
+
+body.dark-theme .empty-state {
+  color: #94a3b8;
+}

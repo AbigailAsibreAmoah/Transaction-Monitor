@@ -1,9 +1,93 @@
+<!-- Non-authenticated state -->
 <div class="app-container" *ngIf="!user">
+  <div class="app-header">
+    <div>
+      <h1 class="app-title">Transaction Monitoring System</h1>
+      <p class="app-subtitle">Secure Financial Transaction Monitoring</p>
+    </div>
+    <div class="user-menu-container">
+      <button class="user-menu-btn" (click)="toggleUserMenu()" title="Account Menu">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="16" fill="url(#userGradient)"/>
+          <circle cx="16" cy="12" r="5" fill="white" opacity="0.9"/>
+          <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="white" opacity="0.9"/>
+          <defs>
+            <linearGradient id="userGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#60a5fa"/>
+              <stop offset="100%" stop-color="#3b82f6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </button>
+      <div class="user-menu-dropdown" *ngIf="showUserMenu" (click)="closeUserMenu()">
+        <div class="menu-item" (click)="toggleTheme()">
+          <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
+          <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-item auth-prompt">
+          <span>👤</span>
+          <span>Sign in to access your account</span>
+        </div>
+      </div>
+    </div>
+  </div>
   <app-auth (login)="onLogin($event.userData, $event.authToken)"></app-auth>
 </div>
 
+<!-- Authenticated state -->
 <div class="app-container" *ngIf="user">
-  <h1 class="app-title">Transaction Monitoring System</h1>
-  <p class="app-subtitle">Welcome back, {{ user ? user.username : 'User' }}!</p>
+  <div class="app-header">
+    <div>
+      <h1 class="app-title">Transaction Monitoring System</h1>
+      <p class="app-subtitle">Welcome back, {{ user ? user.username : 'User' }}!</p>
+    </div>
+    <div class="user-menu-container">
+      <button class="user-menu-btn" (click)="toggleUserMenu()" title="User Menu">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="16" fill="url(#userGradient)"/>
+          <circle cx="16" cy="12" r="5" fill="white" opacity="0.9"/>
+          <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="white" opacity="0.9"/>
+          <defs>
+            <linearGradient id="userGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#60a5fa"/>
+              <stop offset="100%" stop-color="#3b82f6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </button>
+      <div class="user-menu-dropdown" *ngIf="showUserMenu" (click)="closeUserMenu()">
+        <div class="menu-header">
+          <span class="user-name">{{ user.username }}</span>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-item settings-item" (click)="toggleSettingsSubmenu(); $event.stopPropagation()">
+          <span>⚙️</span>
+          <span>Settings</span>
+          <span class="submenu-arrow" [class.open]="showSettingsSubmenu">▶</span>
+        </div>
+        <div class="settings-submenu" *ngIf="showSettingsSubmenu">
+          <div class="submenu-item" (click)="openRiskProfileSettings()">
+            <span>🛡️</span>
+            <span>Risk Profile & Budget</span>
+          </div>
+          <div class="submenu-item" (click)="openGeneralSettings()">
+            <span>⚙️</span>
+            <span>General Settings</span>
+          </div>
+          <div class="submenu-item" (click)="toggleTheme()">
+            <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
+            <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+          </div>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-item logout" (click)="onLogout()">
+          <span>🚪</span>
+          <span>Sign Out</span>
+        </div>
+      </div>
+    </div>
+  </div>
   <app-dashboard [token]="token" (logout)="onLogout()"></app-dashboard>
+  <app-settings [show]="showSettings" (close)="closeSettings()"></app-settings>
 </div>

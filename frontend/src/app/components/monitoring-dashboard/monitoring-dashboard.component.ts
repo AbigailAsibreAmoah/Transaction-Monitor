@@ -32,6 +32,8 @@ interface Metrics {
 })
 export class MonitoringDashboardComponent implements OnInit, OnChanges {
   @Input() transactions: Transaction[] = [];
+  @Input() selectedCurrency: string = 'USD';
+  @Input() totalVolumeInSelectedCurrency: number = 0;
 
   metrics: Metrics = {
     totalTransactions: 0,
@@ -77,7 +79,7 @@ export class MonitoringDashboardComponent implements OnInit, OnChanges {
 
   updateMetrics() {
     const total = this.transactions.length;
-    const volume = this.transactions.reduce((sum, t) => sum + parseFloat(t.amount?.toString() || '0'), 0);
+    const volume = this.totalVolumeInSelectedCurrency || this.transactions.reduce((sum, t) => sum + parseFloat(t.amount?.toString() || '0'), 0);
     const avgRisk = this.transactions.length > 0 
       ? this.transactions.reduce((sum, t) => sum + (t.risk_score || 0), 0) / this.transactions.length 
       : 0;
@@ -139,5 +141,21 @@ export class MonitoringDashboardComponent implements OnInit, OnChanges {
 
   formatCurrency(amount: number, currency: string): string {
     return formatCurrency(amount, currency);
+  }
+  
+  getSelectedCurrencySymbol(): string {
+    const currencies = [
+      { code: 'USD', symbol: '$' },
+      { code: 'EUR', symbol: '€' },
+      { code: 'GBP', symbol: '£' },
+      { code: 'GHS', symbol: '₵' },
+      { code: 'CAD', symbol: 'C$' },
+      { code: 'JPY', symbol: '¥' },
+      { code: 'INR', symbol: '₹' },
+      { code: 'NGN', symbol: '₦' },
+      { code: 'KES', symbol: 'KSh' },
+      { code: 'ZAR', symbol: 'R' }
+    ];
+    return currencies.find(c => c.code === this.selectedCurrency)?.symbol || '$';
   }
 }

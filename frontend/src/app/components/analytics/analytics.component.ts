@@ -25,6 +25,83 @@ interface Transaction {
 })
 export class AnalyticsComponent implements OnInit, OnChanges {
   @Input() transactions: Transaction[] = [];
+  
+  get spendingInsights() {
+    if (this.transactions.length === 0) return [];
+    
+    const insights = [];
+    
+    // Day of week analysis
+    const daySpending = this.transactions.reduce((acc, t) => {
+      const day = new Date(t.timestamp || Date.now()).getDay();
+      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day];
+      acc[dayName] = (acc[dayName] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const topDay = Object.entries(daySpending).sort(([,a], [,b]) => b - a)[0];
+    if (topDay) {
+      const isWeekend = topDay[0] === 'Saturday' || topDay[0] === 'Sunday';
+      insights.push(`You spend most on ${topDay[0]}s ${isWeekend ? '(weekends)' : '(weekdays)'}`);
+    }
+    
+    // Time of day analysis
+    const hourSpending = this.transactions.reduce((acc, t) => {
+      const hour = new Date(t.timestamp || Date.now()).getHours();
+      let period = 'Morning';
+      if (hour >= 12 && hour < 17) period = 'Afternoon';
+      else if (hour >= 17 && hour < 21) period = 'Evening';
+      else if (hour >= 21 || hour < 6) period = 'Night';
+      acc[period] = (acc[period] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const topTime = Object.entries(hourSpending).sort(([,a], [,b]) => b - a)[0];
+    if (topTime) {
+      insights.push(`Most active during ${topTime[0].toLowerCase()} hours`);
+    }
+    
+    // Risk behavior
+    const avgRisk = this.transactions.reduce((sum, t) => sum + (t.risk_score || 0), 0) / this.transactions.length;
+    if (avgRisk > 50) {
+      insights.push('⚠️ Higher than average risk profile');
+    } else if (avgRisk < 20) {
+      insights.push('✅ Very conservative spending pattern');
+    }
+    
+    // Merchant diversity
+    const uniqueMerchants = new Set(this.transactions.map(t => t.merchant)).size;
+    const merchantDiversity = uniqueMerchants / this.transactions.length;
+    if (merchantDiversity > 0.7) {
+      insights.push('🌟 High merchant diversity - you shop around!');
+    } else if (merchantDiversity < 0.3) {
+      insights.push('🔄 You tend to stick to familiar merchants');
+    }
+    
+    return insights;
+  }
+  
+  get merchantRiskProfiles() {
+    const merchantData = this.transactions.reduce((acc, t) => {
+      if (!acc[t.merchant]) {
+        acc[t.merchant] = { transactions: [], totalAmount: 0, avgRisk: 0 };
+      }
+      acc[t.merchant].transactions.push(t);
+      acc[t.merchant].totalAmount += t.amount;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    return Object.entries(merchantData).map(([merchant, data]) => {
+      const avgRisk = data.transactions.reduce((sum: number, t: Transaction) => sum + (t.risk_score || 0), 0) / data.transactions.length;
+      return {
+        merchant,
+        count: data.transactions.length,
+        totalAmount: data.totalAmount,
+        avgRisk: Math.round(avgRisk),
+        riskLevel: avgRisk > 70 ? 'High' : avgRisk > 30 ? 'Medium' : 'Low'
+      };
+    }).sort((a, b) => b.totalAmount - a.totalAmount);
+  }
 
   // Detailed metrics
   detailedMetrics = {

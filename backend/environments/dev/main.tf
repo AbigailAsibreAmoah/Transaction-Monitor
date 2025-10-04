@@ -32,12 +32,14 @@ module "api_gateway" {
 # Lambda Module
 # ==============================
 module "lambda" {
-  source               = "../../modules/lambda"
-  project_name         = local.project_name
-  environment          = local.environment
-  lambda_function_name = "${local.project_name}-${local.environment}-function"
-  s3_bucket_name       = module.storage.s3_bucket_name
-  s3_bucket_arn        = module.storage.s3_bucket_arn
-  dynamodb_table_name  = module.storage.transactions_table_name
-  dynamodb_table_arn   = module.storage.transactions_table_arn
+  source                      = "../../modules/lambda"
+  project_name                = local.project_name
+  environment                 = local.environment
+  lambda_function_name        = "${local.project_name}-${local.environment}-function"
+  s3_bucket_name              = module.storage.s3_bucket_name
+  s3_bucket_arn               = module.storage.s3_bucket_arn
+  dynamodb_table_name         = module.storage.transactions_table_name
+  dynamodb_table_arn          = module.storage.transactions_table_arn
+  user_profiles_table_name    = module.storage.user_profiles_table_name
+  user_profiles_table_arn     = module.storage.user_profiles_table_arn
 }

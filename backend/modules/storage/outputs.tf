@@ -38,4 +38,14 @@ output "transactions_table_arn" {
   value       = aws_dynamodb_table.transactions.arn
 }
 
+output "user_profiles_table_name" {
+  description = "Name of the DynamoDB user profiles table"
+  value       = aws_dynamodb_table.user_profiles.name
+}
+
+output "user_profiles_table_arn" {
+  description = "ARN of the DynamoDB user profiles table"
+  value       = aws_dynamodb_table.user_profiles.arn
+}
+
 

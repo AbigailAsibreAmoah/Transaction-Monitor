@@ -9,7 +9,7 @@
     </div>
     <div class="metric-card">
       <h4>Total Volume</h4>
-      <div class="metric-value">${{ metrics.totalVolume.toFixed(2) }}</div>
+      <div class="metric-value">{{ getSelectedCurrencySymbol() }}{{ metrics.totalVolume.toFixed(2) }}</div>
     </div>
     <div class="metric-card">
       <h4>Avg Risk Score</h4>

@@ -1,10 +1,4 @@
 <div class="dashboard">
-  <div class="dashboard-header">
-    <h2>Transaction Monitor</h2>
-    <button class="signout-btn" (click)="onLogout()">
-      Sign Out
-    </button>
-  </div>
   
   <app-tab-navigation 
     [activeTab]="activeTab" 
@@ -14,11 +8,225 @@
   <div class="tab-content">
     <!-- Dashboard Tab -->
     <div *ngIf="activeTab === 'dashboard'">
-      <app-monitoring-dashboard [transactions]="transactions"></app-monitoring-dashboard>
+      <!-- Currency Selector -->
+      <div class="currency-selector">
+        <label>Display Currency:</label>
+        <div class="currency-wrapper">
+          <span 
+            class="currency-symbol" 
+            [class.highlighted]="showCurrencyTip"
+            (dblclick)="onCurrencyDoubleClick()"
+          >
+            {{ getSelectedCurrencySymbol() }}
+          </span>
+          <select 
+            [(ngModel)]="selectedCurrency" 
+            (change)="onCurrencyChange(selectedCurrency)"
+            name="displayCurrency"
+          >
+            <option *ngFor="let curr of currencies" [value]="curr.code">
+              {{ curr.code }} - {{ curr.name }}
+            </option>
+          </select>
+        </div>
+        
+        <!-- First-time user tip -->
+        <div class="currency-tip" *ngIf="showCurrencyTip">
+          <div class="tip-arrow"></div>
+          <p>Double tap the dollar sign to change the currency to your preference</p>
+          <button (click)="showCurrencyTip = false">Got it!</button>
+        </div>
+      </div>
+      
+      <app-monitoring-dashboard 
+        [transactions]="transactions"
+        [selectedCurrency]="selectedCurrency"
+        [totalVolumeInSelectedCurrency]="getTotalVolumeInSelectedCurrency()"
+      ></app-monitoring-dashboard>
     </div>
 
     <!-- Submit Transaction Tab -->
     <div *ngIf="activeTab === 'transactions'">
+      <!-- Advanced Tools Dropdown -->
+      <div class="advanced-tools">
+        <div class="tools-header" (click)="showAdvancedTools = !showAdvancedTools">
+          <span>Advanced Tools</span>
+          <span class="dropdown-arrow" [class.open]="showAdvancedTools">▼</span>
+        </div>
+        <div class="tools-dropdown" *ngIf="showAdvancedTools">
+          <button type="button" class="tool-option" (click)="showBulkEntry = !showBulkEntry; showAdvancedTools = false">
+            Bulk Entry
+          </button>
+          <button type="button" class="tool-option" (click)="showRiskSimulator = !showRiskSimulator; showAdvancedTools = false">
+            Risk Simulator
+          </button>
+          <button type="button" class="tool-option" (click)="showRiskSettings = !showRiskSettings; showAdvancedTools = false">
+            Risk Profile Settings
+          </button>
+          <div class="csv-import" (drop)="onFileDropped($event)" (dragover)="onDragOver($event)">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".csv" style="display: none">
+            <button type="button" class="tool-option" (click)="fileInput.click(); showAdvancedTools = false">
+              Import CSV
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Risk Simulator -->
+      <div class="risk-simulator" *ngIf="showRiskSimulator">
+        <h4>Risk Simulator - "What if I spent...?"</h4>
+        <div class="simulator-form">
+          <input type="number" [(ngModel)]="simulatorAmount" (input)="simulateRisk()" placeholder="Amount" name="simAmount">
+          <input type="text" [(ngModel)]="simulatorMerchant" (input)="simulateRisk()" placeholder="Merchant" name="simMerchant">
+          <select [(ngModel)]="simulatorCurrency" (change)="simulateRisk()" name="simCurrency">
+            <option *ngFor="let curr of currencies" [value]="curr.code">{{ curr.code }}</option>
+          </select>
+        </div>
+        <div class="simulator-result" *ngIf="simulatorAmount && simulatorMerchant">
+          <div class="risk-preview">
+            <div class="risk-meter">
+              <div class="risk-bar">
+                <div class="risk-fill" [style.width.%]="simulatorRisk" [class]="simulatorStatus"></div>
+              </div>
+              <div class="risk-info">
+                <span>Risk: {{ simulatorRisk }}</span>
+                <span [class]="simulatorStatus">{{ simulatorStatus | titlecase }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bulk Transaction Entry -->
+      <div class="bulk-entry" *ngIf="showBulkEntry">
+        <h4>Bulk Transaction Entry</h4>
+        <div class="bulk-transactions">
+          <div class="bulk-transaction" *ngFor="let transaction of bulkTransactions; let i = index">
+            <input type="number" [(ngModel)]="transaction.amount" placeholder="Amount" [name]="'bulk-amount-' + i">
+            <input type="text" [(ngModel)]="transaction.merchant" placeholder="Merchant" [name]="'bulk-merchant-' + i">
+            <select [(ngModel)]="transaction.currency" [name]="'bulk-currency-' + i">
+              <option *ngFor="let curr of currencies" [value]="curr.code">{{ curr.code }}</option>
+            </select>
+            <button type="button" class="remove-btn" (click)="removeBulkTransaction(i)" *ngIf="bulkTransactions.length > 1">×</button>
+          </div>
+        </div>
+        <div class="bulk-actions">
+          <button type="button" (click)="addBulkTransaction()">+ Add Transaction</button>
+          <button type="button" (click)="submitBulkTransactions()" [disabled]="loading">Submit All</button>
+          <button type="button" (click)="showBulkEntry = false">Cancel</button>
+        </div>
+      </div>
+      
+      <!-- Risk Profile Settings -->
+      <div class="risk-settings" *ngIf="showRiskSettings">
+        <h4>Risk Profile & Budget Management</h4>
+        
+        <!-- Budget Settings -->
+        <div class="budget-section">
+          <h5>Budget Limits</h5>
+          <div class="budget-inputs">
+            <div class="input-group">
+              <label>Monthly Budget ($):</label>
+              <input type="number" [(ngModel)]="userRiskProfile.monthlyBudget" (change)="updateRiskProfile()" name="monthlyBudget">
+            </div>
+            <div class="input-group">
+              <label>Daily Limit ($):</label>
+              <input type="number" [(ngModel)]="userRiskProfile.dailyLimit" (change)="updateRiskProfile()" name="dailyLimit">
+            </div>
+          </div>
+          
+          <!-- Budget Status -->
+          <div class="budget-status">
+            <div class="budget-bar">
+              <label>Monthly Budget Usage</label>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getBudgetStatus().monthlyUsed"></div>
+              </div>
+              <small>${{ currentMonthSpending.toFixed(2) }} / ${{ userRiskProfile.monthlyBudget }} ({{ getBudgetStatus().monthlyUsed.toFixed(1) }}%)</small>
+            </div>
+            <div class="budget-bar">
+              <label>Daily Limit Usage</label>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getBudgetStatus().dailyUsed"></div>
+              </div>
+              <small>${{ currentDaySpending.toFixed(2) }} / ${{ userRiskProfile.dailyLimit }} ({{ getBudgetStatus().dailyUsed.toFixed(1) }}%)</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Risk Settings -->
+        <div class="risk-section">
+          <h5>Risk Preferences</h5>
+          <div class="risk-inputs">
+            <div class="input-group">
+              <label>Risk Tolerance:</label>
+              <select [(ngModel)]="userRiskProfile.riskTolerance" (change)="updateRiskProfile()" name="riskTolerance">
+                <option value="low">Conservative (Low Risk)</option>
+                <option value="medium">Balanced (Medium Risk)</option>
+                <option value="high">Aggressive (High Risk)</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Risk Threshold (0-100):</label>
+              <input type="number" min="0" max="100" [(ngModel)]="userRiskProfile.customRiskThreshold" (change)="updateRiskProfile()" name="riskThreshold">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Merchant Management -->
+        <div class="merchant-section">
+          <h5>Merchant Management</h5>
+          <div class="merchant-lists">
+            <div class="trusted-merchants">
+              <label>Trusted Merchants (Lower Risk)</label>
+              <div class="merchant-tags">
+                <span class="merchant-tag trusted" *ngFor="let merchant of userRiskProfile.trustedMerchants">
+                  {{ merchant }}
+                  <button type="button" (click)="removeTrustedMerchant(merchant)">&times;</button>
+                </span>
+                <button type="button" class="add-merchant-btn" (click)="addTrustedMerchant()">+ Add Trusted</button>
+              </div>
+            </div>
+            <div class="blocked-merchants">
+              <label>Blocked Merchants (High Risk)</label>
+              <div class="merchant-tags">
+                <span class="merchant-tag blocked" *ngFor="let merchant of userRiskProfile.blockedMerchants">
+                  {{ merchant }}
+                  <button type="button" (click)="removeBlockedMerchant(merchant)">&times;</button>
+                </span>
+                <button type="button" class="add-merchant-btn" (click)="addBlockedMerchant()">+ Add Blocked</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="settings-actions">
+          <button type="button" (click)="showRiskSettings = false">Close Settings</button>
+        </div>
+      </div>
+      
+      <!-- Smart Defaults Helper -->
+      <div class="smart-defaults" *ngIf="userPreferences.commonMerchants.length > 0 || userPreferences.recentAmounts.length > 0">
+        <div class="defaults-section" *ngIf="userPreferences.commonMerchants.length > 0">
+          <label>Common Merchants:</label>
+          <div class="quick-select">
+            <button type="button" *ngFor="let merchant of userPreferences.commonMerchants" 
+                    (click)="transaction.merchant = merchant; onTransactionChange()" class="quick-btn">
+              {{ merchant }}
+            </button>
+          </div>
+        </div>
+        <div class="defaults-section" *ngIf="userPreferences.recentAmounts.length > 0">
+          <label>Recent Amounts:</label>
+          <div class="quick-select">
+            <button type="button" *ngFor="let amount of userPreferences.recentAmounts" 
+                    (click)="transaction.amount = amount.toString(); onTransactionChange()" class="quick-btn">
+              ${{ amount }}
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <form (ngSubmit)="handleSubmit()" class="transaction-form">
         <div class="form-group">
           <label>Amount:</label>
@@ -27,6 +235,7 @@
             step="0.01"
             [(ngModel)]="transaction.amount"
             name="amount"
+            (input)="onTransactionChange()"
             required
           />
         </div>
@@ -37,6 +246,7 @@
             type="text"
             [(ngModel)]="transaction.merchant"
             name="merchant"
+            (input)="onTransactionChange()"
             required
           />
         </div>
@@ -46,6 +256,7 @@
           <select
             [(ngModel)]="transaction.currency"
             name="currency"
+            (change)="onTransactionChange()"
           >
             <option value="CAD">CAD - Canadian Dollar</option>
             <option value="EUR">EUR - Euro</option>
@@ -60,19 +271,33 @@
           </select>
         </div>
         
+        <!-- Live Risk Preview -->
+        <div class="risk-preview" *ngIf="transaction.amount || transaction.merchant">
+          <div class="risk-meter">
+            <div class="risk-bar">
+              <div class="risk-fill" [style.width.%]="liveRiskScore" [class]="liveRiskStatus"></div>
+            </div>
+            <div class="risk-info">
+              <span class="risk-score">Risk Score: {{ liveRiskScore }}</span>
+              <span class="risk-status" [class]="liveRiskStatus">{{ liveRiskStatus | titlecase }}</span>
+            </div>
+          </div>
+        </div>
+        
         <button type="submit" [disabled]="loading">
           {{ loading ? 'Processing...' : 'Submit Transaction' }}
         </button>
       </form>
       
-      <div class="result" [ngClass]="{'error': result?.error, 'success': !result?.error}" *ngIf="result">
+      <div class="result" [ngClass]="{'error': result?.error, 'success': result?.success}" *ngIf="result">
         <div *ngIf="result.error">
-          <p>Error: {{ result.error }}</p>
+          <p><strong>Error:</strong> {{ result.error }}</p>
         </div>
-        <div *ngIf="!result.error">
-          <p>Transaction ID: {{ result.transaction_id }}</p>
-          <p>Risk Score: {{ result.risk_score }}</p>
-          <p>Status: {{ result.status }}</p>
+        <div *ngIf="result.success">
+          <p><strong>Success!</strong> {{ result.message }}</p>
+          <div class="transaction-details" *ngIf="result.transaction_id">
+            <small>Transaction ID: {{ result.transaction_id }}</small>
+          </div>
         </div>
       </div>
     </div>
@@ -86,7 +311,8 @@
     <div *ngIf="activeTab === 'history'">
       <app-transaction-history 
         [transactions]="transactions" 
-        (delete)="deleteTransaction($event)">
+        (delete)="deleteTransaction($event)"
+        (clone)="cloneTransaction($event)">
       </app-transaction-history>
     </div>
   </div>

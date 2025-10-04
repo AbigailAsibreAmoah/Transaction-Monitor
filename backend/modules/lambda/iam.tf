@@ -70,7 +70,8 @@ resource "aws_iam_role_policy" "lambda_permissions" {
           aws_dynamodb_table.transactions.arn,
           "${aws_dynamodb_table.transactions.arn}/index/*",
           aws_dynamodb_table.csrf_tokens.arn,
-          "${aws_dynamodb_table.csrf_tokens.arn}/index/*"
+          "${aws_dynamodb_table.csrf_tokens.arn}/index/*",
+          "arn:aws:dynamodb:*:*:table/${var.project_name}-${var.environment}-user-profiles"
         ]
       }
     ]

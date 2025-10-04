@@ -133,6 +133,24 @@ resource "aws_dynamodb_table" "transactions" {
   }
 }
 
+# DynamoDB table for user profiles
+resource "aws_dynamodb_table" "user_profiles" {
+  name           = "${var.project_name}-${var.environment}-user-profiles"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "user_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-user-profiles"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
 # CloudFront distribution
 resource "aws_cloudfront_distribution" "frontend" {
   origin {

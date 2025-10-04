@@ -1,0 +1,31 @@
+<div class="settings-overlay" *ngIf="show" (click)="closeSettings()">
+  <div class="settings-modal" (click)="$event.stopPropagation()">
+    <div class="settings-header">
+      <h3>Settings</h3>
+      <button class="close-btn" (click)="closeSettings()">&times;</button>
+    </div>
+    
+    <div class="settings-content">
+      <div class="settings-category" *ngFor="let category of settingsCategories">
+        <h4>{{ category.title }}</h4>
+        <div class="settings-items">
+          <div class="setting-item" *ngFor="let item of category.items">
+            <div class="setting-info">
+              <label>{{ item.label }}</label>
+              <p>{{ item.description }}</p>
+            </div>
+            <div class="toggle-switch">
+              <input 
+                type="checkbox" 
+                [id]="item.key" 
+                [checked]="getSetting(item.key)"
+                (change)="toggleSetting(item.key)"
+              >
+              <label [for]="item.key" class="switch"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -28,24 +28,72 @@
     </div>
   </div>
   
+  <!-- Search and Filters -->
+  <div class="filters-section" *ngIf="transactions.length > 0">
+    <div class="search-bar">
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        placeholder="Search by merchant, ID, or currency..."
+        class="search-input"
+      >
+    </div>
+    <div class="filter-controls">
+      <select [(ngModel)]="filterStatus" class="filter-select">
+        <option value="all">All Status</option>
+        <option value="approved">Approved</option>
+        <option value="flagged">Flagged</option>
+      </select>
+      <select [(ngModel)]="filterRisk" class="filter-select">
+        <option value="all">All Risk Levels</option>
+        <option value="low">Low Risk (≤30)</option>
+        <option value="medium">Medium Risk (31-70)</option>
+        <option value="high">High Risk (>70)</option>
+      </select>
+      <select [(ngModel)]="sortBy" class="filter-select">
+        <option value="timestamp">Sort by Date</option>
+        <option value="amount">Sort by Amount</option>
+        <option value="risk_score">Sort by Risk</option>
+        <option value="merchant">Sort by Merchant</option>
+      </select>
+      <select [(ngModel)]="sortOrder" class="filter-select">
+        <option value="desc">Descending</option>
+        <option value="asc">Ascending</option>
+      </select>
+    </div>
+  </div>
+  
   <div class="empty-state" *ngIf="transactions.length === 0">
     <p>No transactions yet. Submit your first transaction to see it here.</p>
   </div>
   
-  <div class="transaction-list" *ngIf="transactions.length > 0">
-    <div *ngFor="let transaction of transactions" class="transaction-item">
+  <div class="empty-state" *ngIf="transactions.length > 0 && filteredTransactions.length === 0">
+    <p>No transactions match your filters. Try adjusting your search criteria.</p>
+  </div>
+  
+  <div class="transaction-list" *ngIf="filteredTransactions.length > 0">
+    <div *ngFor="let transaction of filteredTransactions" class="transaction-item">
       <div class="transaction-header">
         <span class="transaction-id">ID: {{ transaction.transaction_id }}</span>
         <span class="transaction-date">
           {{ transaction.timestamp ? (transaction.timestamp | date:'medium') : 'N/A' }}
         </span>
-        <button 
-          class="delete-btn" 
-          (click)="onDelete(transaction.transaction_id)"
-          title="Delete transaction"
-        >
-          ×
-        </button>
+        <div class="transaction-actions">
+          <button 
+            class="clone-btn" 
+            (click)="onClone(transaction)"
+            title="Clone transaction"
+          >
+            Clone
+          </button>
+          <button 
+            class="delete-btn" 
+            (click)="onDelete(transaction.transaction_id)"
+            title="Delete transaction"
+          >
+            ×
+          </button>
+        </div>
       </div>
       <div class="transaction-details">
         <div class="detail-item">

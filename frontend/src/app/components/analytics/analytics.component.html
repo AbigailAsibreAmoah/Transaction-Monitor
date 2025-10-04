@@ -1,5 +1,5 @@
 <div class="analytics-container">
-  <h2>📊 Comprehensive Analytics</h2>
+  <h2>Comprehensive Analytics</h2>
   
   <!-- Detailed Metrics Grid -->
   <div class="detailed-metrics">
@@ -196,6 +196,32 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spending Insights -->
+  <div class="insights-section" *ngIf="transactions.length > 0">
+    <h3>🧠 Spending Insights</h3>
+    <div class="insights-grid">
+      <div class="insight-card" *ngFor="let insight of spendingInsights">
+        <p>{{ insight }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Merchant Risk Profiles -->
+  <div class="merchant-profiles" *ngIf="merchantRiskProfiles.length > 0">
+    <h3>🏪 Merchant Risk Profiles</h3>
+    <div class="profiles-grid">
+      <div class="profile-card" *ngFor="let profile of merchantRiskProfiles.slice(0, 6)" 
+           [ngClass]="'risk-' + profile.riskLevel.toLowerCase()">
+        <h4>{{ profile.merchant }}</h4>
+        <div class="profile-stats">
+          <span class="stat">{{ profile.count }} transactions</span>
+          <span class="stat">${{ profile.totalAmount.toFixed(2) }} total</span>
+          <span class="risk-badge">{{ profile.riskLevel }} Risk ({{ profile.avgRisk }})</span>
+        </div>
       </div>
     </div>
   </div>

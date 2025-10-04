@@ -29,10 +29,14 @@ try:
         transactions_table = dynamodb.Table(transactions_table_name)
     else:
         transactions_table = None
+    
+    # User profiles table
+    user_profiles_table = dynamodb.Table('transaction-monitor-dev-user-profiles')
 except Exception as e:
     logger.error(f"Failed to initialize DynamoDB client: {str(e)}")
     csrf_table = None
     transactions_table = None
+    user_profiles_table = None
 
 # Cognito client
 try:
@@ -56,7 +60,7 @@ _today_cache = {'date': None, 'str': None}
 HIGH_RISK_MERCHANTS = ['casino', 'crypto', 'gambling']
 
 CORS_HEADERS = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://d1n1njxujlyqzf.cloudfront.net',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-CSRF-Token',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Content-Type': 'application/json'
@@ -161,6 +165,11 @@ def lambda_handler(event, context):
             return transaction_handler(event)
         elif path.endswith('/transactions'):
             return get_transactions_handler(event)
+        elif path.endswith('/user-profile'):
+            if method == 'GET':
+                return get_user_profile_handler(event)
+            elif method == 'PUT':
+                return update_user_profile_handler(event)
         elif path.endswith('/signup'):
             return signup_handler(event)
         elif path.endswith('/login'):
@@ -236,14 +245,22 @@ def transaction_handler(event):
         
         if not merchant or len(str(merchant).strip()) == 0:
             return {'statusCode': 400, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Merchant name cannot be empty'})}
-        # Extract user_id from JWT token (simplified for now)
+        # Extract user_id from JWT token
         auth_header = event.get('headers', {}).get('Authorization', '')
         user_id = 'anonymous'  # Default fallback
         if auth_header.startswith('Bearer '):
-            # In production, decode JWT to get user_id
-            # For now, use a simple hash of the token
-            import hashlib
-            user_id = hashlib.md5(auth_header.encode()).hexdigest()[:8]
+            try:
+                import base64
+                token = auth_header.split(' ')[1]
+                # Decode JWT payload (middle part)
+                payload = token.split('.')[1]
+                # Add padding if needed
+                payload += '=' * (4 - len(payload) % 4)
+                decoded = json.loads(base64.b64decode(payload))
+                user_id = decoded.get('cognito:username', decoded.get('username', 'anonymous'))
+            except Exception as e:
+                logger.error(f"Failed to decode JWT: {str(e)}")
+                user_id = 'anonymous'
         
         risk_score = calculate_risk_score(body, amount_float)
         transaction_record = {
@@ -339,8 +356,17 @@ def get_transactions_handler(event):
         if not auth_header.startswith('Bearer '):
             return {'statusCode': 401, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Authorization token required'})}
         
-        import hashlib
-        user_id = hashlib.md5(auth_header.encode()).hexdigest()[:8]
+        try:
+            import base64
+            token = auth_header.split(' ')[1]
+            payload = token.split('.')[1]
+            payload += '=' * (4 - len(payload) % 4)
+            decoded = json.loads(base64.b64decode(payload))
+            user_id = decoded.get('cognito:username', decoded.get('username', 'anonymous'))
+        except Exception as e:
+            logger.error(f"Failed to decode JWT: {str(e)}")
+            user_id = 'anonymous'
+        
         logger.info(f"Fetching transactions for user_id: {user_id}")
         
         if not transactions_table:
@@ -348,10 +374,10 @@ def get_transactions_handler(event):
         
         # First try to query by user_id using GSI
         try:
+            from boto3.dynamodb.conditions import Key
             response = transactions_table.query(
                 IndexName='UserTimestampIndex',
-                KeyConditionExpression='user_id = :user_id',
-                ExpressionAttributeValues={':user_id': user_id},
+                KeyConditionExpression=Key('user_id').eq(user_id),
                 ScanIndexForward=False  # Most recent first
             )
             transactions = response.get('Items', [])
@@ -359,9 +385,9 @@ def get_transactions_handler(event):
         except Exception as query_error:
             logger.error(f"Query failed, falling back to scan: {str(query_error)}")
             # Fallback to scan if query fails
+            from boto3.dynamodb.conditions import Attr
             response = transactions_table.scan(
-                FilterExpression='user_id = :user_id',
-                ExpressionAttributeValues={':user_id': user_id}
+                FilterExpression=Attr('user_id').eq(user_id)
             )
             transactions = response.get('Items', [])
         
@@ -379,6 +405,106 @@ def get_transactions_handler(event):
         }
     except Exception as e:
         logger.error(f"Get transactions handler error: {str(e)}", exc_info=True)
+        return {'statusCode': 500, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Internal server error'})}
+
+def get_user_profile_handler(event):
+    try:
+        auth_header = event.get('headers', {}).get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return {'statusCode': 401, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Authorization token required'})}
+        
+        try:
+            import base64
+            token = auth_header.split(' ')[1]
+            payload = token.split('.')[1]
+            payload += '=' * (4 - len(payload) % 4)
+            decoded = json.loads(base64.b64decode(payload))
+            user_id = decoded.get('cognito:username', decoded.get('username', 'anonymous'))
+        except Exception as e:
+            logger.error(f"Failed to decode JWT: {str(e)}")
+            return {'statusCode': 401, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Invalid token'})}
+        
+        if not user_profiles_table:
+            return {'statusCode': 500, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Database not available'})}
+        
+        try:
+            response = user_profiles_table.get_item(Key={'user_id': user_id})
+            if 'Item' in response:
+                profile = response['Item']
+                # Convert Decimal to float for JSON serialization
+                for key, value in profile.items():
+                    if isinstance(value, Decimal):
+                        profile[key] = float(value)
+                return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': json.dumps({'profile': profile})}
+            else:
+                # Return default profile
+                default_profile = {
+                    'user_id': user_id,
+                    'monthlyBudget': 5000.0,
+                    'dailyLimit': 1000.0,
+                    'riskTolerance': 'medium',
+                    'trustedMerchants': [],
+                    'blockedMerchants': [],
+                    'customRiskThreshold': 70,
+                    'budgetAlerts': True
+                }
+                return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': json.dumps({'profile': default_profile})}
+        except Exception as e:
+            logger.error(f"Failed to get user profile: {str(e)}")
+            return {'statusCode': 500, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Failed to retrieve profile'})}
+    except Exception as e:
+        logger.error(f"Get user profile handler error: {str(e)}", exc_info=True)
+        return {'statusCode': 500, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Internal server error'})}
+
+def update_user_profile_handler(event):
+    try:
+        auth_header = event.get('headers', {}).get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return {'statusCode': 401, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Authorization token required'})}
+        
+        try:
+            import base64
+            token = auth_header.split(' ')[1]
+            payload = token.split('.')[1]
+            payload += '=' * (4 - len(payload) % 4)
+            decoded = json.loads(base64.b64decode(payload))
+            user_id = decoded.get('cognito:username', decoded.get('username', 'anonymous'))
+        except Exception as e:
+            logger.error(f"Failed to decode JWT: {str(e)}")
+            return {'statusCode': 401, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Invalid token'})}
+        
+        if not event.get('body'):
+            return {'statusCode': 400, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Request body is required'})}
+        
+        try:
+            body = json.loads(event.get('body', '{}'))
+        except json.JSONDecodeError:
+            return {'statusCode': 400, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Invalid JSON format'})}
+        
+        profile = body.get('profile', {})
+        if not profile:
+            return {'statusCode': 400, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Profile data is required'})}
+        
+        # Convert float values to Decimal for DynamoDB
+        profile['user_id'] = user_id
+        profile['updated_at'] = datetime.datetime.now(UTC).isoformat()
+        
+        for key, value in profile.items():
+            if isinstance(value, float):
+                profile[key] = Decimal(str(value))
+        
+        if not user_profiles_table:
+            return {'statusCode': 500, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Database not available'})}
+        
+        try:
+            user_profiles_table.put_item(Item=profile)
+            logger.info(f"User profile updated for user {user_id}")
+            return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': json.dumps({'message': 'Profile updated successfully'})}
+        except Exception as e:
+            logger.error(f"Failed to update user profile: {str(e)}")
+            return {'statusCode': 500, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Failed to update profile'})}
+    except Exception as e:
+        logger.error(f"Update user profile handler error: {str(e)}", exc_info=True)
         return {'statusCode': 500, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Internal server error'})}
 
 def login_handler(event):

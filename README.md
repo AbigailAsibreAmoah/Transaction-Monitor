@@ -43,27 +43,37 @@ A comprehensive full-stack financial transaction monitoring and risk assessment 
 - **Interactive Charts** - Line, bar, and doughnut charts
 - **Real-time Updates** - Live transaction monitoring
 
-## Risk Assessment Algorithm
+## Enhanced Risk Assessment System
 
-### Risk Scoring Rules
-The system calculates risk scores based on:
+### Personalized Risk Management
+The system now uses intelligent, budget-aware risk assessment based on individual user profiles:
 
-**Amount-based Risk:**
-- Transactions > $10,000: +50 points
-- Transactions > $5,000: +30 points  
-- Transactions > $1,000: +10 points
+**User Risk Profile Components:**
+- **Monthly Budget**: Personal spending limit with progress tracking
+- **Daily Limit**: Maximum daily transaction threshold
+- **Risk Tolerance**: Low, Medium, or High risk preference
+- **Trusted Merchants**: Whitelist of approved merchants (reduced risk)
+- **Blocked Merchants**: Blacklist of prohibited merchants (auto-reject)
+- **Custom Risk Threshold**: Personalized flagging threshold (default: 70)
+- **Budget Alerts**: Real-time notifications for budget limits
 
-**Merchant-based Risk:**
-- High-risk merchants (+40 points): 'casino', 'crypto', 'gambling'
+**Smart Risk Calculation:**
+- **Budget Impact**: Risk increases as spending approaches monthly/daily limits
+- **Merchant Trust**: Trusted merchants get risk reduction, blocked merchants auto-flagged
+- **Risk Tolerance**: Adjusts thresholds based on user preference (Conservative/Moderate/Aggressive)
+- **Spending Patterns**: Historical analysis for personalized risk assessment
 
-**Decision Thresholds:**
-- **Risk Score > 70**: Transaction flagged as high-risk
-- **Risk Score ≤ 70**: Transaction approved
+**Decision Logic:**
+- **Blocked Merchants**: Immediate rejection regardless of amount
+- **Budget Exceeded**: Flagged when monthly/daily limits exceeded
+- **Risk Score > Custom Threshold**: Flagged based on personalized settings
+- **Trusted Merchants**: Approved with risk reduction bonus
 
 ### Example Risk Scenarios
-- $15,000 to any merchant = 50 points → **FLAGGED**
-- $6,001 to "Casino" = 30 + 40 = 70+ points → **FLAGGED**
-- $2,000 to "Amazon" = 10 points → **APPROVED**
+- $2,000 to blocked merchant → **REJECTED** (regardless of budget)
+- $800 when daily limit is $500 → **FLAGGED** (budget exceeded)
+- $1,500 to trusted merchant with moderate tolerance → **APPROVED** (risk reduction)
+- $3,000 when 90% of monthly budget used → **FLAGGED** (budget impact)
 
 ## Project Structure
 
@@ -119,7 +129,7 @@ Transaction-Monitoring/
 - **S3 Bucket**: `transaction-monitor-frontend-dev-iqye17nn`
 - **CloudFront Distribution**: `E2K9YPW4SMSG86`
 - **API Gateway**: `https://lpf1gn8aia.execute-api.us-east-1.amazonaws.com/dev`
-- **DynamoDB Tables**: `transaction-monitor-dev-transactions`, `csrf-tokens`
+- **DynamoDB Tables**: `transaction-monitor-dev-transactions`, `transaction-monitor-dev-user-profiles`, `csrf-tokens`
 
 ### Frontend Deployment
 ```bash
@@ -148,6 +158,10 @@ terraform apply
 - `POST /transaction` - Submit new transaction
 - `GET /transactions` - Retrieve user transactions
 - `GET /test` - API health check
+
+### User Profiles
+- `GET /user-profile` - Retrieve user risk profile and preferences
+- `PUT /user-profile` - Update user risk profile and budget settings
 
 ### Request/Response Examples
 
@@ -237,6 +251,12 @@ Supported currencies with proper symbols:
 - **EUR** (€) - Euro
 - **GBP** (£) - British Pound
 - **GHS** (₵) - Ghana Cedis
+- **JPY** (¥) - Japanese Yen
+- **INR** (₹) - Indian Rupee
+- **NGN** (₦) - Nigerian Naira
+- **ZAR** (R) - South African Rand
+- **KES** (KSh) - Kenyan Shilling
+- **CAD** (C$) - Canadian Dollar
 
 ## Configuration
 
@@ -260,7 +280,7 @@ ENVIRONMENT=dev
 - **Full-stack Angular application** with TypeScript
 - **AWS Cognito authentication** system
 - **Transaction processing pipeline** with DynamoDB persistence
-- **Advanced risk assessment** algorithm
+- **Personalized risk assessment** with user profiles and budget management
 - **Multi-tab interface** with dedicated analytics section
 - **Comprehensive analytics** with 6 detailed charts
 - **Real-time dashboard** with compact overview

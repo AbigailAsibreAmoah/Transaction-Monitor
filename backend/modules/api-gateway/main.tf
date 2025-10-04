@@ -67,6 +67,28 @@ resource "aws_api_gateway_method_response" "transaction_post_response_200" {
   }
 }
 
+resource "aws_api_gateway_method_response" "transaction_post_response_401" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.transaction_resource.id
+  http_method = aws_api_gateway_method.transaction_post.http_method
+  status_code = "401"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "transaction_post_response_500" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.transaction_resource.id
+  http_method = aws_api_gateway_method.transaction_post.http_method
+  status_code = "500"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
 resource "aws_api_gateway_method_response" "transaction_options_response_200" {
   rest_api_id = aws_api_gateway_rest_api.transaction_api.id
   resource_id = aws_api_gateway_resource.transaction_resource.id
@@ -85,6 +107,34 @@ resource "aws_api_gateway_integration_response" "transaction_post_integration_re
   resource_id = aws_api_gateway_resource.transaction_resource.id
   http_method = aws_api_gateway_method.transaction_post.http_method
   status_code = aws_api_gateway_method_response.transaction_post_response_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_allowed_origin}'"
+  }
+
+  depends_on = [aws_api_gateway_integration.transaction_integration]
+}
+
+resource "aws_api_gateway_integration_response" "transaction_post_integration_response_401" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.transaction_resource.id
+  http_method = aws_api_gateway_method.transaction_post.http_method
+  status_code = aws_api_gateway_method_response.transaction_post_response_401.status_code
+  selection_pattern = "401"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_allowed_origin}'"
+  }
+
+  depends_on = [aws_api_gateway_integration.transaction_integration]
+}
+
+resource "aws_api_gateway_integration_response" "transaction_post_integration_response_500" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.transaction_resource.id
+  http_method = aws_api_gateway_method.transaction_post.http_method
+  status_code = aws_api_gateway_method_response.transaction_post_response_500.status_code
+  selection_pattern = "5\\d{2}"
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_allowed_origin}'"
@@ -297,6 +347,142 @@ resource "aws_api_gateway_integration_response" "login_options_integration_respo
 }
 
 # ======================================================
+# USER PROFILE ENDPOINT (Protected by Cognito)
+# ======================================================
+resource "aws_api_gateway_resource" "user_profile_resource" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  parent_id   = aws_api_gateway_rest_api.transaction_api.root_resource_id
+  path_part   = "user-profile"
+}
+
+resource "aws_api_gateway_method" "user_profile_get" {
+  rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
+  resource_id   = aws_api_gateway_resource.user_profile_resource.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_method" "user_profile_put" {
+  rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
+  resource_id   = aws_api_gateway_resource.user_profile_resource.id
+  http_method   = "PUT"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_method" "user_profile_options" {
+  rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
+  resource_id   = aws_api_gateway_resource.user_profile_resource.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "user_profile_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.transaction_api.id
+  resource_id             = aws_api_gateway_resource.user_profile_resource.id
+  http_method             = aws_api_gateway_method.user_profile_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = var.lambda_invoke_arn
+}
+
+resource "aws_api_gateway_integration" "user_profile_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.transaction_api.id
+  resource_id             = aws_api_gateway_resource.user_profile_resource.id
+  http_method             = aws_api_gateway_method.user_profile_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = var.lambda_invoke_arn
+}
+
+resource "aws_api_gateway_integration" "user_profile_options_integration" {
+  rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
+  resource_id   = aws_api_gateway_resource.user_profile_resource.id
+  http_method   = aws_api_gateway_method.user_profile_options.http_method
+  type          = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "user_profile_get_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.user_profile_resource.id
+  http_method = aws_api_gateway_method.user_profile_get.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "user_profile_put_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.user_profile_resource.id
+  http_method = aws_api_gateway_method.user_profile_put.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "user_profile_options_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.user_profile_resource.id
+  http_method = aws_api_gateway_method.user_profile_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "user_profile_get_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.user_profile_resource.id
+  http_method = aws_api_gateway_method.user_profile_get.http_method
+  status_code = aws_api_gateway_method_response.user_profile_get_response_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_allowed_origin}'"
+  }
+
+  depends_on = [aws_api_gateway_integration.user_profile_get_integration]
+}
+
+resource "aws_api_gateway_integration_response" "user_profile_put_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.user_profile_resource.id
+  http_method = aws_api_gateway_method.user_profile_put.http_method
+  status_code = aws_api_gateway_method_response.user_profile_put_response_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_allowed_origin}'"
+  }
+
+  depends_on = [aws_api_gateway_integration.user_profile_put_integration]
+}
+
+resource "aws_api_gateway_integration_response" "user_profile_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.transaction_api.id
+  resource_id = aws_api_gateway_resource.user_profile_resource.id
+  http_method = aws_api_gateway_method.user_profile_options.http_method
+  status_code = aws_api_gateway_method_response.user_profile_options_response_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'${var.cors_allowed_origin}'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,PUT,OPTIONS'"
+  }
+
+  depends_on = [aws_api_gateway_integration.user_profile_options_integration]
+}
+
+# ======================================================
 # Cognito Authorizer
 # ======================================================
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
@@ -305,6 +491,31 @@ resource "aws_api_gateway_authorizer" "cognito_authorizer" {
   identity_source = "method.request.header.Authorization"
   type            = "COGNITO_USER_POOLS"
   provider_arns   = [aws_cognito_user_pool.user_pool.arn]
+}
+
+# ======================================================
+# Gateway Responses for CORS on errors
+# ======================================================
+resource "aws_api_gateway_gateway_response" "unauthorized" {
+  rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
+  response_type = "UNAUTHORIZED"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'${var.cors_allowed_origin}'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+  }
+}
+
+resource "aws_api_gateway_gateway_response" "access_denied" {
+  rest_api_id   = aws_api_gateway_rest_api.transaction_api.id
+  response_type = "ACCESS_DENIED"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'${var.cors_allowed_origin}'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+  }
 }
 
 # ======================================================
@@ -322,6 +533,12 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.transactions_options_integration,
     aws_api_gateway_integration_response.transactions_get_integration_response,
     aws_api_gateway_integration_response.transactions_options_integration_response,
+    aws_api_gateway_integration.user_profile_get_integration,
+    aws_api_gateway_integration.user_profile_put_integration,
+    aws_api_gateway_integration.user_profile_options_integration,
+    aws_api_gateway_integration_response.user_profile_get_integration_response,
+    aws_api_gateway_integration_response.user_profile_put_integration_response,
+    aws_api_gateway_integration_response.user_profile_options_integration_response,
     aws_api_gateway_integration.signup_integration,
     aws_api_gateway_integration.signup_options_integration,
     aws_api_gateway_integration_response.signup_options_integration_response,
@@ -344,6 +561,12 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.transaction_integration.id,
       aws_api_gateway_integration.transaction_options_integration.id,
       aws_api_gateway_integration_response.transaction_options_integration_response.id,
+      aws_api_gateway_resource.user_profile_resource.id,
+      aws_api_gateway_method.user_profile_get.id,
+      aws_api_gateway_method.user_profile_put.id,
+      aws_api_gateway_integration.user_profile_get_integration.id,
+      aws_api_gateway_integration.user_profile_put_integration.id,
+      aws_api_gateway_integration_response.user_profile_options_integration_response.id,
       aws_api_gateway_resource.signup_resource.id,
       aws_api_gateway_method.signup_post.id,
       aws_api_gateway_integration.signup_integration.id,

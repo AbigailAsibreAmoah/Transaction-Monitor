@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { getCurrencySymbol } from '../../utils/currency';
 
 interface Transaction {
@@ -15,16 +16,81 @@ interface Transaction {
 @Component({
   selector: 'app-transaction-history',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './transaction-history.component.html',
   styleUrls: ['./transaction-history.component.css']
 })
 export class TransactionHistoryComponent {
   @Input() transactions: Transaction[] = [];
   @Output() delete = new EventEmitter<string>();
+  @Output() clone = new EventEmitter<Transaction>();
+  
+  searchTerm = '';
+  filterStatus = 'all';
+  filterRisk = 'all';
+  sortBy = 'timestamp';
+  sortOrder = 'desc';
 
   get flaggedCount(): number {
-    return this.transactions.filter(t => (t.risk_score || 0) > 70).length;
+    return this.filteredTransactions.filter(t => (t.risk_score || 0) > 70).length;
+  }
+  
+  get filteredTransactions(): Transaction[] {
+    let filtered = [...this.transactions];
+    
+    // Search filter
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.merchant.toLowerCase().includes(term) ||
+        t.transaction_id.toLowerCase().includes(term) ||
+        t.currency.toLowerCase().includes(term)
+      );
+    }
+    
+    // Status filter
+    if (this.filterStatus !== 'all') {
+      filtered = filtered.filter(t => t.status === this.filterStatus);
+    }
+    
+    // Risk filter
+    if (this.filterRisk !== 'all') {
+      filtered = filtered.filter(t => {
+        const risk = t.risk_score || 0;
+        switch(this.filterRisk) {
+          case 'high': return risk > 70;
+          case 'medium': return risk > 30 && risk <= 70;
+          case 'low': return risk <= 30;
+          default: return true;
+        }
+      });
+    }
+    
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: any, bVal: any;
+      switch(this.sortBy) {
+        case 'amount':
+          aVal = a.amount; bVal = b.amount;
+          break;
+        case 'risk_score':
+          aVal = a.risk_score || 0; bVal = b.risk_score || 0;
+          break;
+        case 'merchant':
+          aVal = a.merchant.toLowerCase(); bVal = b.merchant.toLowerCase();
+          break;
+        default:
+          aVal = new Date(a.timestamp || 0).getTime();
+          bVal = new Date(b.timestamp || 0).getTime();
+      }
+      
+      if (this.sortOrder === 'desc') {
+        return aVal < bVal ? 1 : -1;
+      }
+      return aVal > bVal ? 1 : -1;
+    });
+    
+    return filtered;
   }
 
   exportToCSV() {
@@ -129,6 +195,10 @@ export class TransactionHistoryComponent {
 
   onDelete(transactionId: string) {
     this.delete.emit(transactionId);
+  }
+  
+  onClone(transaction: Transaction) {
+    this.clone.emit(transaction);
   }
 
   getRiskClass(riskScore: number): string {

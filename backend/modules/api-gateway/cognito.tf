@@ -32,6 +32,19 @@ resource "aws_cognito_user_pool" "user_pool" {
   # Skip verification
   email_verification_subject = "Verify your email"
   email_verification_message = "Please verify your email with code {####}"
+  
+  # Custom attributes
+  schema {
+    attribute_data_type = "String"
+    name                = "role"
+    required            = false
+    mutable             = true
+    
+    string_attribute_constraints {
+      min_length = 1
+      max_length = 20
+    }
+  }
 }
 
 # Cognito User Pool Client

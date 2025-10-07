@@ -6,6 +6,7 @@ import { SettingsComponent } from './components/settings/settings.component';
 
 interface User {
   username: string;
+  role?: string;
 }
 
 @Component({
@@ -42,6 +43,15 @@ export class AppComponent implements OnInit {
   }
 
   onLogin(userData: User, authToken: string) {
+    // Extract role from JWT token
+    try {
+      const payload = authToken.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      userData.role = decoded['custom:role'] || 'user';
+    } catch (e) {
+      userData.role = 'user';
+    }
+    
     this.user = userData;
     this.token = authToken;
     localStorage.setItem('user', JSON.stringify(userData));
@@ -89,6 +99,12 @@ export class AppComponent implements OnInit {
   
   closeSettings() {
     this.showSettings = false;
+  }
+  
+  openAdminPanel() {
+    alert('Admin Panel: View all users, system metrics, and manage alerts');
+    this.showUserMenu = false;
+    this.showSettingsSubmenu = false;
   }
   
   private handleDocumentClick(event: Event) {

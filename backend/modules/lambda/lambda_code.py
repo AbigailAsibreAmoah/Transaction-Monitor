@@ -45,9 +45,17 @@ except Exception as e:
     logger.error(f"Failed to initialize Cognito client: {str(e)}")
     raise
 
+# SNS client
+try:
+    sns_client = boto3.client('sns')
+except Exception as e:
+    logger.error(f"Failed to initialize SNS client: {str(e)}")
+    sns_client = None
+
 S3_BUCKET = os.environ.get('S3_BUCKET')
 PROJECT_NAME = os.environ.get('PROJECT_NAME')
 ENVIRONMENT = os.environ.get('ENVIRONMENT')
+SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
 
 if not S3_BUCKET or not PROJECT_NAME or not ENVIRONMENT:
     raise ValueError("S3_BUCKET, PROJECT_NAME, and ENVIRONMENT env vars are required")
@@ -118,6 +126,38 @@ def validate_csrf_token(token):
     except Exception as e:
         logger.error(f"CSRF validation error: {str(e)}")
         return False
+
+def send_alert(transaction_record):
+    """Send SNS alert for high-risk transactions"""
+    if not sns_client or not SNS_TOPIC_ARN:
+        logger.warning("SNS not configured, skipping alert")
+        return
+    
+    try:
+        risk_score = float(transaction_record.get('risk_score', 0))
+        if risk_score > 70:  # High risk threshold
+            message = f"""
+🚨 HIGH RISK TRANSACTION DETECTED
+
+Transaction ID: {transaction_record.get('transaction_id')}
+Amount: {transaction_record.get('currency', 'USD')} {transaction_record.get('amount')}
+Merchant: {transaction_record.get('merchant')}
+Risk Score: {risk_score}/100
+Status: {transaction_record.get('status', 'flagged').upper()}
+User: {transaction_record.get('user_id', 'unknown')}
+Time: {transaction_record.get('timestamp')}
+
+⚠️ This transaction requires immediate review.
+            """.strip()
+            
+            sns_client.publish(
+                TopicArn=SNS_TOPIC_ARN,
+                Subject=f"🚨 High Risk Transaction Alert - Risk Score: {risk_score}",
+                Message=message
+            )
+            logger.info(f"Alert sent for transaction {transaction_record.get('transaction_id')}")
+    except Exception as e:
+        logger.error(f"Failed to send SNS alert: {str(e)}")
 
 def calculate_risk_score(transaction, amount=None):
     risk_score = 0
@@ -284,6 +324,9 @@ def transaction_handler(event):
         
         # Also log to S3 for backup
         log_to_s3(transaction_record)
+        
+        # Send alert if high risk
+        send_alert(transaction_record)
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': json.dumps({
             'transaction_id': transaction_record['transaction_id'],
             'risk_score': risk_score,
@@ -329,11 +372,17 @@ def signup_handler(event):
         if '@' not in str(email) or '.' not in str(email):
             return {'statusCode': 400, 'headers': CORS_HEADERS, 'body': json.dumps({'error': 'Invalid email format'})}
         _, app_client_id = get_cognito_resources()
+        # Assign default role (first user gets admin, others get user)
+        user_role = 'admin' if username.lower() == 'admin' else 'user'
+        
         response = cognito_client.sign_up(
             ClientId=app_client_id,
             Username=username,
             Password=password,
-            UserAttributes=[{'Name': 'email', 'Value': email}]
+            UserAttributes=[
+                {'Name': 'email', 'Value': email},
+                {'Name': 'custom:role', 'Value': user_role}
+            ]
         )
         user_pool_id, _ = get_cognito_resources()
         cognito_client.admin_confirm_sign_up(UserPoolId=user_pool_id, Username=username)

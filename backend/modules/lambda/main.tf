@@ -24,6 +24,7 @@ resource "aws_lambda_function" "transaction_processor" {
       PROJECT_NAME        = var.project_name
       ENVIRONMENT         = var.environment
       LOG_LEVEL           = "INFO"
+      SNS_TOPIC_ARN       = aws_sns_topic.transaction_alerts.arn
     }
   }
 }

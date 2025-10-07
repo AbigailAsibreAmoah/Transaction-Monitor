@@ -75,6 +75,10 @@
             <span>⚙️</span>
             <span>General Settings</span>
           </div>
+          <div class="submenu-item" *ngIf="user?.role === 'admin'" (click)="openAdminPanel()">
+            <span>🔧</span>
+            <span>Admin Panel</span>
+          </div>
           <div class="submenu-item" (click)="toggleTheme()">
             <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
             <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>

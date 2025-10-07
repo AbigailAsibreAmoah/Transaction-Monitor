@@ -73,6 +73,13 @@ resource "aws_iam_role_policy" "lambda_permissions" {
           "${aws_dynamodb_table.csrf_tokens.arn}/index/*",
           "arn:aws:dynamodb:*:*:table/${var.project_name}-${var.environment}-user-profiles"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        Resource = aws_sns_topic.transaction_alerts.arn
       }
     ]
   })

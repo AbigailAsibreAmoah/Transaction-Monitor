@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10, 3.11]
+        python-version: ['3.10', '3.11']
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,13 +25,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip pytest
-          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
+          if [ -f backend/requirements.txt ]; then
+            pip install -r backend/requirements.txt
+          else
+            echo "No backend/requirements.txt found; skipping pip install."
+          fi
 
       - name: Run pytest (if tests present)
         run: |
-          if [ -d backend/tests ] || [ -d tests ]; then
-            cd backend || exit 0
+          if [ -d backend/tests ] || [ -d tests ] || [ -f pytest.ini ]; then
+            cd backend || true
             pytest -q
           else
-            echo "No pytest tests found, skipping."
+            echo "No pytest tests detected; skipping."
           fi
